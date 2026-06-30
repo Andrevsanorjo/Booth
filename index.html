@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="C:\Users\kaitosama\OneDrive\Desktop\Project\assets\images\LumiFrame.png">
+<title>Snapstrip — Online Photo Booth</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+  :root{
+    --lime:#C6F24E;
+    --lime-deep:#9FD632;
+    --pink:#FF5CA8;
+    --pink-deep:#E8398C;
+    --orange:#FFA53D;
+    --sky:#5CD6FF;
+    --ink:#1A1A1A;
+    --cream:#FFF8E7;
+    --panel:#FFFDF4;
+    --strip:#FFF1B8;
+    --line:#1A1A1A;
+    --shadow: rgba(26,26,26,0.9);
+    --radius: 22px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 10% 15%, rgba(92,214,255,0.35), transparent 38%),
+      radial-gradient(circle at 90% 85%, rgba(255,92,168,0.30), transparent 42%),
+      var(--cream);
+    color:var(--ink);
+    font-family:'Baloo 2', sans-serif;
+    min-height:100vh;
+    padding:40px 20px 80px;
+  }
+
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:34px;
+    flex-wrap:wrap;
+    gap:16px;
+  }
+  .brand{display:flex; align-items:center; gap:14px;}
+  .bulb{
+    width:38px;height:38px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff, var(--pink) 65%);
+    border:3px solid var(--ink);
+    box-shadow:0 0 0 4px var(--orange);
+    flex-shrink:0;
+  }
+  h1{
+    font-size:clamp(30px,4.5vw,46px);
+    margin:0;
+    letter-spacing:-0.01em;
+    font-weight:800;
+    color:var(--ink);
+    -webkit-text-stroke: 0.5px var(--ink);
+    transform:rotate(-1.5deg);
+    display:inline-block;
+  }
+  .tagline{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    color:var(--ink);
+    margin-top:2px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    background:var(--sky);
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:20px;
+    border:2px solid var(--ink);
+  }
+  .counter-tag{
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size:12px;
+    color:var(--ink);
+    text-align:right;
+    background:var(--lime);
+    padding:8px 14px;
+    border-radius:20px;
+    border:2px solid var(--ink);
+    transform:rotate(2deg);
+  }
+
+  .stage{
+    display:grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap:28px;
+  }
+  @media (max-width:800px){
+    .stage{grid-template-columns:1fr;}
+  }
+
+  /* CAMERA PANEL */
+  .camera-panel{
+    background:var(--orange);
+    border:3px solid var(--ink);
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow:8px 8px 0 var(--shadow);
+    position:relative;
+  }
+  .viewfinder{
+    position:relative;
+    width:100%;
+    aspect-ratio:4/3;
+    background:#15140F;
+    border-radius:16px;
+    overflow:hidden;
+    border:3px solid var(--ink);
+  }
+  video, canvas.shot-preview{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  .mirror{transform:scaleX(-1);}
+
+  .corner-ticks span{
+    position:absolute; width:20px; height:20px;
+    border-color:var(--lime);
+    opacity:0.95;
+  }
+  .tl{top:10px;left:10px;border-top:4px solid;border-left:4px solid; border-radius:6px 0 0 0;}
+  .tr{top:10px;right:10px;border-top:4px solid;border-right:4px solid; border-radius:0 6px 0 0;}
+  .bl{bottom:10px;left:10px;border-bottom:4px solid;border-left:4px solid; border-radius:0 0 0 6px;}
+  .br{bottom:10px;right:10px;border-bottom:4px solid;border-right:4px solid; border-radius:0 0 6px 0;}
+
+  .countdown-num{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:130px; font-weight:800; color:var(--lime);
+    -webkit-text-stroke: 3px var(--ink);
+    opacity:0; pointer-events:none;
+  }
+  .flash{
+    position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;
+  }
+  .placeholder-msg{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px; color:var(--lime); font-family:'Space Mono',monospace; font-size:13px;
+    text-align:center; padding:20px; font-weight:700;
+  }
+
+  .controls-row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:16px; gap:12px; flex-wrap:wrap;
+  }
+
+  .filters{
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .filter-chip{
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    padding:7px 13px;
+    border-radius:20px;
+    border:2px solid var(--ink);
+    background:var(--cream);
+    cursor:pointer;
+    color:var(--ink);
+    transition:transform .12s ease, background .12s ease;
+  }
+  .filter-chip:hover{transform:translateY(-2px);}
+  .filter-chip.active{
+    background:var(--pink); color:#fff;
+  }
+
+  .shutter-row{display:flex; align-items:center; gap:14px;}
+  .shutter-btn{
+    width:66px;height:66px;border-radius:50%;
+    background:var(--pink);
+    border:4px solid var(--ink);
+    cursor:pointer;
+    box-shadow:0 5px 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease;
+    flex-shrink:0;
+    position:relative;
+  }
+  .shutter-btn::after{
+    content:"";
+    position:absolute; inset:10px;
+    border-radius:50%;
+    border:2px solid #fff;
+  }
+  .shutter-btn:active{transform:translateY(4px); box-shadow:0 1px 0 var(--ink);}
+  .shutter-btn:disabled{opacity:0.4; cursor:not-allowed;}
+
+  .start-btn, .secondary-btn{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    padding:13px 22px;
+    border-radius:14px;
+    border:3px solid var(--ink);
+    cursor:pointer;
+    background:var(--lime);
+    color:var(--ink);
+    box-shadow:4px 4px 0 var(--ink);
+    transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .start-btn:hover, .secondary-btn:hover{transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink);}
+  .start-btn:active, .secondary-btn:active{transform:translate(0,0); box-shadow:2px 2px 0 var(--ink);}
+  .start-btn:disabled{opacity:0.55; cursor:not-allowed; box-shadow:4px 4px 0 var(--ink); transform:none;}
+  .secondary-btn{
+    background:var(--sky);
+  }
+  .secondary-btn:disabled{opacity:0.55; cursor:not-allowed; transform:none; box-shadow:4px 4px 0 var(--ink);}
+
+  select#timerSelect{
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size:12px;
+    padding:9px 10px;
+    border-radius:12px;
+    border:2px solid var(--ink);
+    background:var(--cream);
+    color:var(--ink);
+  }
+
+  /* STRIP PANEL */
+  .strip-panel{
+    background:var(--sky);
+    border:3px solid var(--ink);
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow:8px 8px 0 var(--shadow);
+    display:flex;
+    flex-direction:column;
+  }
+  .strip-header{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;
+  }
+  .strip-header h2{
+    font-size:17px; margin:0; text-transform:uppercase; letter-spacing:0.03em;
+    font-weight:800; color:var(--ink);
+  }
+  .clear-link{
+    font-family:'Space Mono', monospace; font-weight:700; font-size:11px; color:var(--ink);
+    background:#fff; border:2px solid var(--ink); border-radius:14px; padding:5px 10px;
+    cursor:pointer;
+  }
+
+  .strip-frame{
+    background:var(--strip);
+    border:3px dashed var(--ink);
+    border-radius:16px;
+    padding:14px;
+    flex:1;
+    min-height:380px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    overflow-y:auto;
+  }
+  .shot-slot{
+    aspect-ratio:4/3;
+    border-radius:10px;
+    border:2px solid var(--ink);
+    background:repeating-linear-gradient(45deg, #fff, #fff 8px, #FFE8A3 8px, #FFE8A3 16px);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--pink-deep); font-family:'Space Mono', monospace; font-weight:700; font-size:13px;
+    overflow:hidden;
+    position:relative;
+  }
+  .shot-slot img{width:100%; height:100%; object-fit:cover; display:block;}
+  .slot-x{
+    position:absolute; top:5px; right:5px;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--pink); color:#fff; border:2px solid var(--ink);
+    font-size:13px; cursor:pointer; line-height:1; font-weight:700;
+    display:none; align-items:center; justify-content:center;
+  }
+  .shot-slot:hover .slot-x{display:flex;}
+
+  .strip-footer{
+    margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;
+  }
+  .strip-footer button{flex:1; min-width:120px;}
+
+  footer{
+    text-align:center; margin-top:40px;
+    font-family:'Space Mono', monospace; font-size:11px; color:var(--ink);
+    opacity:0.7;
+  }
+
+  @media (max-width:520px){
+    .countdown-num{font-size:90px;}
+    .shutter-btn{width:56px;height:56px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="bulb"></div>
+      <div>
+        <h1>Snapstrip</h1>
+        <div class="tagline">Online photo booth · 4 frames per strip</div>
+      </div>
+    </div>
+    <div class="counter-tag" id="frameCounter">0 / 4 frames taken</div>
+  </header>
+
+  <div class="stage">
+
+    <!-- CAMERA -->
+    <div class="camera-panel">
+      <div class="viewfinder" id="viewfinder">
+        <video id="video" class="mirror" autoplay playsinline muted></video>
+        <canvas id="shotPreview" class="shot-preview mirror" style="display:none;"></canvas>
+        <div class="placeholder-msg" id="placeholderMsg">
+          <div style="font-size:28px;">◎</div>
+          <div>Camera is off.<br>Tap "Start camera" to begin.</div>
+        </div>
+        <div class="corner-ticks">
+          <span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span>
+        </div>
+        <div class="countdown-num" id="countdownNum"></div>
+        <div class="flash" id="flash"></div>
+      </div>
+
+      <div class="controls-row">
+        <div class="filters" id="filterRow">
+          <button class="filter-chip active" data-filter="none">Normal</button>
+          <button class="filter-chip" data-filter="grayscale(1) contrast(1.1)">B&amp;W</button>
+          <button class="filter-chip" data-filter="sepia(0.65) contrast(1.05)">Sepia</button>
+          <button class="filter-chip" data-filter="saturate(1.6) contrast(1.1) brightness(1.05)">Vivid</button>
+          <button class="filter-chip" data-filter="contrast(1.2) brightness(0.95) saturate(0.85)">Vintage</button>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <button class="start-btn" id="startBtn">Start camera</button>
+        <div class="shutter-row">
+          <select id="timerSelect">
+            <option value="0">No timer</option>
+            <option value="3" selected>3s timer</option>
+            <option value="5">5s timer</option>
+          </select>
+          <button class="shutter-btn" id="shutterBtn" disabled title="Take photo"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRIP -->
+    <div class="strip-panel">
+      <div class="strip-header">
+        <h2>Your strip</h2>
+        <button class="clear-link" id="clearBtn">Clear all</button>
+      </div>
+      <div class="strip-frame" id="stripFrame">
+        <div class="shot-slot" data-slot="0">1</div>
+        <div class="shot-slot" data-slot="1">2</div>
+        <div class="shot-slot" data-slot="2">3</div>
+        <div class="shot-slot" data-slot="3">4</div>
+      </div>
+      <div class="strip-footer">
+        <button class="start-btn" id="downloadBtn" disabled>Download strip</button>
+        <button class="secondary-btn" id="downloadSingleBtn" disabled>Download last photo</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Runs entirely in your browser — nothing is uploaded anywhere. Your photos stay on your device.</footer>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const startBtn = document.getElementById('startBtn');
+const shutterBtn = document.getElementById('shutterBtn');
+const placeholderMsg = document.getElementById('placeholderMsg');
+const countdownNum = document.getElementById('countdownNum');
+const flashEl = document.getElementById('flash');
+const timerSelect = document.getElementById('timerSelect');
+const stripFrame = document.getElementById('stripFrame');
+const frameCounter = document.getElementById('frameCounter');
+const downloadBtn = document.getElementById('downloadBtn');
+const downloadSingleBtn = document.getElementById('downloadSingleBtn');
+const clearBtn = document.getElementById('clearBtn');
+const filterRow = document.getElementById('filterRow');
+
+let currentFilter = 'none';
+let stream = null;
+let shots = []; // dataURLs
+const MAX_SHOTS = 4;
+
+filterRow.addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter-chip');
+  if(!btn) return;
+  [...filterRow.children].forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = btn.dataset.filter;
+  video.style.filter = currentFilter;
+});
+
+startBtn.addEventListener('click', async () => {
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio:false });
+    video.srcObject = stream;
+    placeholderMsg.style.display = 'none';
+    shutterBtn.disabled = false;
+    startBtn.textContent = 'Camera on';
+    startBtn.disabled = true;
+  }catch(err){
+    placeholderMsg.innerHTML = '<div style="font-size:28px;">⚠</div><div>Could not access camera.<br>Check your browser permissions.</div>';
+  }
+});
+
+shutterBtn.addEventListener('click', () => {
+  const t = parseInt(timerSelect.value, 10);
+  if(t > 0){
+    runCountdown(t, takeShot);
+  } else {
+    takeShot();
+  }
+});
+
+function runCountdown(seconds, cb){
+  shutterBtn.disabled = true;
+  let n = seconds;
+  countdownNum.textContent = n;
+  countdownNum.style.opacity = 1;
+  const iv = setInterval(() => {
+    n--;
+    if(n > 0){
+      countdownNum.textContent = n;
+    } else {
+      clearInterval(iv);
+      countdownNum.style.opacity = 0;
+      cb();
+    }
+  }, 1000);
+}
+
+function takeShot(){
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = 1;
+  requestAnimationFrame(() => {
+    flashEl.style.transition = 'opacity .4s ease';
+    flashEl.style.opacity = 0;
+  });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.filter = currentFilter;
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+  if(shots.length >= MAX_SHOTS) shots.shift();
+  shots.push(dataUrl);
+  renderStrip();
+  shutterBtn.disabled = false;
+  downloadSingleBtn.disabled = false;
+}
+
+function renderStrip(){
+  const slots = stripFrame.querySelectorAll('.shot-slot');
+  slots.forEach((slot, i) => {
+    slot.innerHTML = '';
+    if(shots[i]){
+      const img = document.createElement('img');
+      img.src = shots[i];
+      slot.appendChild(img);
+      const x = document.createElement('button');
+      x.className = 'slot-x';
+      x.textContent = '×';
+      x.title = 'Remove this photo';
+      x.addEventListener('click', (e) => {
+        e.stopPropagation();
+        shots.splice(i, 1);
+        renderStrip();
+      });
+      slot.appendChild(x);
+    } else {
+      slot.textContent = i + 1;
+    }
+  });
+  frameCounter.textContent = `${shots.length} / ${MAX_SHOTS} frames taken`;
+  downloadBtn.disabled = shots.length === 0;
+}
+
+clearBtn.addEventListener('click', () => {
+  shots = [];
+  renderStrip();
+  downloadSingleBtn.disabled = true;
+});
+
+downloadSingleBtn.addEventListener('click', () => {
+  if(shots.length === 0) return;
+  const a = document.createElement('a');
+  a.href = shots[shots.length - 1];
+  a.download = `snapstrip-photo-${Date.now()}.jpg`;
+  a.click();
+});
+
+downloadBtn.addEventListener('click', () => {
+  if(shots.length === 0) return;
+  buildStripImage().then(url => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `snapstrip-${Date.now()}.jpg`;
+    a.click();
+  });
+});
+
+function buildStripImage(){
+  return new Promise((resolve) => {
+    const padding = 24;
+    const gap = 16;
+    const frameW = 480;
+    const frameH = Math.round(frameW * 3 / 4);
+    const footerH = 70;
+    const totalH = padding * 2 + shots.length * frameH + (shots.length - 1) * gap + footerH;
+
+    const out = document.createElement('canvas');
+    out.width = frameW + padding * 2;
+    out.height = totalH;
+    const ctx = out.getContext('2d');
+
+    ctx.fillStyle = '#FFF1B8';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.strokeStyle = '#1A1A1A';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(5, 5, out.width - 10, out.height - 10);
+
+    let loaded = 0;
+    if(shots.length === 0){ resolve(out.toDataURL('image/jpeg', 0.95)); return; }
+
+    shots.forEach((src, i) => {
+      const img = new Image();
+      img.onload = () => {
+        const y = padding + i * (frameH + gap);
+        ctx.save();
+        ctx.beginPath();
+        const r = 6;
+        ctx.moveTo(padding + r, y);
+        ctx.arcTo(padding + frameW, y, padding + frameW, y + frameH, r);
+        ctx.arcTo(padding + frameW, y + frameH, padding, y + frameH, r);
+        ctx.arcTo(padding, y + frameH, padding, y, r);
+        ctx.arcTo(padding, y, padding + frameW, y, r);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, padding, y, frameW, frameH);
+        ctx.restore();
+        ctx.strokeStyle = '#D9D0B8';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(padding, y, frameW, frameH);
+
+        loaded++;
+        if(loaded === shots.length){
+          ctx.fillStyle = '#E8398C';
+          ctx.font = '700 18px Baloo 2, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('SNAPSTRIP · ' + new Date().toLocaleDateString(), out.width/2, out.height - footerH/2 + 6);
+          resolve(out.toDataURL('image/jpeg', 0.95));
+        }
+      };
+      img.src = src;
+    });
+  });
+}
+</script>
+</body>
+</html>
